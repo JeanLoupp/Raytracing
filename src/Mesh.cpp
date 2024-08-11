@@ -12,6 +12,8 @@
 Mesh::Mesh(const std::vector<glm::vec3> &vertices, const std::vector<glm::vec3> &normals, const std::vector<unsigned int> &indices, std::string name)
     : indexCount(indices.size()), name(name) {
 
+    hasTextures = false;
+
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &NBO);
@@ -28,6 +30,45 @@ Mesh::Mesh(const std::vector<glm::vec3> &vertices, const std::vector<glm::vec3> 
     glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), normals.data(), GL_STATIC_DRAW);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(1);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+    glBindVertexArray(0);
+}
+
+Mesh::Mesh(const std::vector<glm::vec3> &vertices, const std::vector<glm::vec3> &normals, const std::vector<glm::vec2> &textures, const std::vector<unsigned int> &indices, std::string name)
+    : indexCount(indices.size()), name(name) {
+
+    hasTextures = (textures.size() != 0);
+    hasNormals = (normals.size() != 0);
+
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &NBO);
+    glGenBuffers(1, &TBO);
+    glGenBuffers(1, &EBO);
+
+    glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(0);
+
+    if (hasNormals) {
+        glBindBuffer(GL_ARRAY_BUFFER, NBO);
+        glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), normals.data(), GL_STATIC_DRAW);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+        glEnableVertexAttribArray(1);
+    }
+
+    if (hasTextures) {
+        glBindBuffer(GL_ARRAY_BUFFER, TBO);
+        glBufferData(GL_ARRAY_BUFFER, textures.size() * sizeof(glm::vec2), textures.data(), GL_STATIC_DRAW);
+        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+        glEnableVertexAttribArray(2);
+    }
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
@@ -54,8 +95,9 @@ void Mesh::draw(unsigned int shaderProgram, glm::vec3 &color, glm::mat4 &modelMa
 Mesh::~Mesh() {
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &NBO);
     glDeleteBuffers(1, &EBO);
+    if (hasNormals) glDeleteBuffers(1, &NBO);
+    if (hasTextures) glDeleteBuffers(1, &TBO);
 }
 
 // Fonction statique pour créer un cube
@@ -207,6 +249,28 @@ std::shared_ptr<Mesh> Mesh::createPlane() {
         0, 1, 2, 3, 2, 1};
 
     return std::make_shared<Mesh>(vertices, normals, indices, "Plane");
+}
+
+std::shared_ptr<Mesh> Mesh::createQuad() {
+    std::vector<glm::vec3> vertices = {
+        {-1.0f, 1.0f, 0.0f},
+        {-1.0f, -1.0f, 0.0f},
+        {1.0f, -1.0f, 0.0f},
+        {1.0f, 1.0f, 0.0f},
+    };
+
+    std::vector<glm::vec3> normals;
+
+    std::vector<glm::vec2> textures = {
+        {0.0f, 1.0f},
+        {0.0f, 0.0f},
+        {1.0f, 0.0f},
+        {1.0f, 1.0f},
+    };
+
+    std::vector<unsigned int> indices = {0, 1, 2, 2, 3, 0};
+
+    return std::make_shared<Mesh>(vertices, normals, textures, indices, "Quad");
 }
 
 std::shared_ptr<Mesh> Mesh::createBox() {

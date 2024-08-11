@@ -10,6 +10,7 @@
 class Mesh {
 public:
     Mesh(const std::vector<glm::vec3> &vertices, const std::vector<glm::vec3> &normals, const std::vector<unsigned int> &indices, std::string name = "");
+    Mesh(const std::vector<glm::vec3> &vertices, const std::vector<glm::vec3> &normals, const std::vector<glm::vec2> &textures, const std::vector<unsigned int> &indices, std::string name = "");
 
     void draw(unsigned int shaderProgram, glm::vec3 &color, glm::mat4 &modelMat);
 
@@ -19,6 +20,7 @@ public:
     static std::shared_ptr<Mesh> createSphere(int resolution = 16);
     static std::shared_ptr<Mesh> createPlane();
     static std::shared_ptr<Mesh> createBox();
+    static std::shared_ptr<Mesh> createQuad();
 
     const unsigned int getVAO() const { return VAO; }
     const unsigned int getIndexCount() const { return indexCount; }
@@ -27,7 +29,8 @@ public:
     std::string getName() const { return name; }
 
 private:
-    unsigned int VAO, VBO, NBO, EBO;
+    unsigned int VAO, VBO, NBO, TBO, EBO;
+    bool hasNormals, hasTextures;
     size_t indexCount;
     std::string name;
 };
