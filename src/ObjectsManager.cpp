@@ -49,18 +49,15 @@ int ObjectManager::addObject(std::string meshName) {
     return addObject(it->second);
 }
 
-void ObjectManager::drawAll(unsigned int shaderProgram) {
-    glUseProgram(shaderProgram);
+void ObjectManager::drawAll(ShaderProgram &shaderProgram) {
+    shaderProgram.use();
     for (int i = 0; i < meshes.size(); i++) {
         glBindVertexArray(meshes[i]->getVAO());
 
         for (int matIdx : objectsPerMesh[i]) {
 
-            int colorLoc = glGetUniformLocation(shaderProgram, "objectColor");
-            glUniform3fv(colorLoc, 1, glm::value_ptr(objects[matIdx].getColor()));
-
-            unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
-            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(objects[matIdx].getModel()));
+            shaderProgram.set("objectColor", objects[matIdx].getColor());
+            shaderProgram.set("model", objects[matIdx].getModel());
 
             glDrawElements(GL_TRIANGLES, meshes[i]->getIndexCount(), GL_UNSIGNED_INT, 0);
         }

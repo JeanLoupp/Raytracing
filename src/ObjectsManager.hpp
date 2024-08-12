@@ -5,6 +5,7 @@
 #include <unordered_map>
 
 #include "Material.hpp"
+#include "ShaderProgram.hpp"
 
 class ObjectManager {
 public:
@@ -13,7 +14,7 @@ public:
     int addObject(Material material, std::string meshName);
     int addObject(unsigned int meshIdx);
     int addObject(std::string meshName);
-    void drawAll(unsigned int shaderProgram);
+    void drawAll(ShaderProgram &shaderProgram);
     void genNames();
     void genMeshNames();
     std::vector<std::string> &getNames() { return names; };

@@ -9,7 +9,8 @@
 #include <string>
 #include <memory>
 
-#include "shaderProgram.hpp"
+#include "ShaderProgram.hpp"
+#include "ComputeShader.hpp"
 #include "Camera.hpp"
 #include "Mesh.hpp"
 #include "Material.hpp"
@@ -89,6 +90,9 @@ GLuint genTexture(int width, int height) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
 
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
     return texture;
 }
 
@@ -135,36 +139,28 @@ bool init() {
     return true;
 }
 
-void beginRender(unsigned int shaderProgram) {
+void beginRender(ShaderProgram &shaderProgram) {
 
-    glUseProgram(shaderProgram);
+    shaderProgram.use();
 
-    // Transformation
-    glm::mat4 view = camera.getViewMat();
-    glm::mat4 projection = camera.getProjMat(SCR_WIDTH, SCR_HEIGHT);
-
-    unsigned int viewLoc = glGetUniformLocation(shaderProgram, "view");
-    unsigned int projectionLoc = glGetUniformLocation(shaderProgram, "projection");
-
-    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-    glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
-
-    glUniform3fv(glGetUniformLocation(shaderProgram, "viewPos"), 1, glm::value_ptr(camera.getPos()));
+    shaderProgram.set("view", camera.getViewMat());
+    shaderProgram.set("projection", camera.getProjMat(SCR_WIDTH, SCR_HEIGHT));
+    shaderProgram.set("viewPos", camera.getPos());
 
     // Light
-    glUniform3fv(glGetUniformLocation(shaderProgram, "lightPos"), 1, &lightPos[0]);
-    glUniform3fv(glGetUniformLocation(shaderProgram, "lightColor"), 1, &lightColor[0]);
+    shaderProgram.set("lightPos", lightPos);
+    shaderProgram.set("lightColor", lightColor);
 }
 
 int main() {
     if (!init()) return -1;
 
-    unsigned int shaderProgram = createShaderProgram("shaders/vertex_shader.glsl", "shaders/fragment_shader.glsl");
-    unsigned int RTshaderProgram = createShaderProgram("shaders/vert_shader_rt.glsl", "shaders/frag_shader_rt.glsl");
+    ShaderProgram shaderProgram("shaders/vertex_shader.glsl", "shaders/fragment_shader.glsl");
+    ShaderProgram RTshaderProgram("shaders/vert_shader_rt.glsl", "shaders/frag_shader_rt.glsl");
 
     std::shared_ptr<Mesh> quadMesh = Mesh::createQuad();
 
-    unsigned int computeShaderProgram = createComputeShaderProgram("shaders/compute_shader.glsl");
+    ComputeShader computeShaderProgram("shaders/compute_shader.glsl");
 
     GLuint texOutput = genTexture(SCR_WIDTH, SCR_HEIGHT);
 
@@ -187,12 +183,12 @@ int main() {
 
         } else {
 
-            glUseProgram(computeShaderProgram);
+            computeShaderProgram.use();
 
             glBindImageTexture(0, texOutput, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
-            glUniform1i(glGetUniformLocation(computeShaderProgram, "width"), SCR_WIDTH);
-            glUniform1i(glGetUniformLocation(computeShaderProgram, "height"), SCR_HEIGHT);
+            computeShaderProgram.set("width", SCR_WIDTH);
+            computeShaderProgram.set("height", SCR_HEIGHT);
 
             // Launch compute shader
             glDispatchCompute((SCR_WIDTH + 15) / 16, (SCR_HEIGHT + 15) / 16, 1);
@@ -200,11 +196,9 @@ int main() {
             // Wait for the compute shader to stop
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-            glUseProgram(RTshaderProgram);
+            RTshaderProgram.use();
 
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, texOutput);
-            glUniform1i(glGetUniformLocation(RTshaderProgram, "renderedImage"), 0);
+            RTshaderProgram.set("renderedImage", 0);
 
             glBindVertexArray(quadMesh->getVAO());
             glDrawElements(GL_TRIANGLES, quadMesh->getIndexCount(), GL_UNSIGNED_INT, 0);
@@ -220,10 +214,6 @@ int main() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
-
-    glDeleteProgram(shaderProgram);
-    glDeleteProgram(RTshaderProgram);
-    glDeleteProgram(computeShaderProgram);
 
     glDeleteTextures(1, &texOutput);
 
