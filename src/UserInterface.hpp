@@ -12,12 +12,17 @@ public:
     UserInterface(GLFWwindow *window, int UIwidth, char filename[], ObjectManager *objManager);
     void render();
 
+    bool shouldReset();
+
 private:
     int UI_selectedObj = 0;
     bool UI_uniformSize = false;
     bool UI_showOpen = false;
     bool UI_isModified = false;
     char UI_filename[64];
+
+    int page = 0;
+    bool UI_shouldReset = true;
 
     int UIwidth;
     GLFWwindow *window;

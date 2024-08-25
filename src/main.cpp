@@ -183,7 +183,7 @@ int main() {
 
         } else {
 
-            if (camera.hasMoved()) frameCount = 0;
+            if (camera.hasMoved() || UI.shouldReset()) frameCount = 0;
 
             computeShaderProgram.use();
 
@@ -194,6 +194,7 @@ int main() {
             glBindImageTexture(0, texOutput2, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
             computeShaderProgram.set("frameCount", frameCount);
+            computeShaderProgram.set("maxBounces", objManager.getMaxBounces());
 
             computeShaderProgram.set("width", (int)SCR_WIDTH);
             computeShaderProgram.set("height", (int)SCR_HEIGHT);
@@ -211,7 +212,7 @@ int main() {
             computeShaderProgram.set("sphereCount", (int)spheres.size());
 
             // Launch compute shader
-            glDispatchCompute(SCR_WIDTH, SCR_HEIGHT, 1);
+            glDispatchCompute((SCR_WIDTH + 15) / 16, (SCR_HEIGHT + 15) / 16, 1);
 
             // Wait for the compute shader to stop
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);

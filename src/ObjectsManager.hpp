@@ -26,6 +26,9 @@ public:
     const std::vector<int> &getObjectsPerMesh(const std::string &meshName);
     const std::vector<int> &getObjectsPerMesh(unsigned int meshIdx);
 
+    int getMaxBounces() const { return maxBounces; }
+    void setMaxBounces(const int bounces) { maxBounces = bounces; }
+
     void saveScene(const std::string &filename);
     void loadScene(const std::string &filename);
 
@@ -37,6 +40,8 @@ private:
     std::vector<std::string> names;
     std::vector<std::string> meshNames;
     std::unordered_map<std::string, int> meshNamesMap;
+
+    int maxBounces = 5;
 };
 
 #endif // OBJECT_MANAGER_HPP

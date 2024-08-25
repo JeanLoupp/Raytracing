@@ -1,10 +1,12 @@
 #version 430 core
 
-layout(local_size_x = 1, local_size_y = 1) in;
+layout(local_size_x = 16, local_size_y = 16) in;
 layout(rgba32f, binding = 0) uniform image2D imgOutput;
 
 uniform sampler2D prevImage;
 uniform int frameCount;
+
+uniform int maxBounces;
 
 struct Sphere{
     vec3 pos;
@@ -86,6 +88,19 @@ HitInfo sendRay(vec3 origin, vec3 direction){
     return hitInfo;
 }
 
+vec3 getAmbientLight(vec3 direction){
+    // direction must be normalized
+
+    vec3 sky = vec3(0.47,0.65,1.0);
+    vec3 bottom = vec3(0.2, 0.3, 0.3);
+
+    if (direction.y > 0.1) return sky;
+    if (direction.y < -0.1) return bottom;
+    
+    float t = smoothstep(-0.1, 0.1, direction.y);
+    return mix(bottom, sky, t);
+}
+
 void main() {
 
     ivec2 pixelCoord = ivec2(gl_GlobalInvocationID.xy);
@@ -102,7 +117,6 @@ void main() {
     vec3 matColor = vec3(1.0);
     vec3 emiColor = vec3(0.0);
 
-    int maxBounces = 5;
     for (int m=0; m<maxBounces; m++){
         HitInfo hitInfo = sendRay(origin, rayDirection);
         int nextSphere = hitInfo.nextSphere;
@@ -116,12 +130,14 @@ void main() {
             }
             emiColor += spheres[nextSphere].emissionColor * matColor;
             matColor *= spheres[nextSphere].color;
+
+            if (max(matColor.x, max(matColor.y, matColor.z)) < 0.005) break;
+
         } else {
+            emiColor += getAmbientLight(rayDirection) * matColor;
             break;
         }
     }
-
-    emiColor *= 2.0;
         
     vec3 prevColor = texelFetch(prevImage, pixelCoord, 0).xyz;
 
