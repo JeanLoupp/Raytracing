@@ -13,6 +13,7 @@ struct Sphere{
     float r;
     vec3 color;
     vec3 emissionColor;
+    float reflexionRatio;
 };
 
 struct HitInfo {
@@ -124,10 +125,16 @@ void main() {
         if (nextSphere != -1) {
             origin = hitInfo.nextOrigin;
             vec3 normal = normalize(origin - spheres[nextSphere].pos);
-            rayDirection = normalize(normal + randomVector(state));
-            if (dot(rayDirection, normal) < 0){
-                rayDirection *= -1.0f;
+
+            if (random(state) > spheres[nextSphere].reflexionRatio){
+                rayDirection = normalize(normal + randomVector(state));
+                if (dot(rayDirection, normal) < 0){
+                    rayDirection *= -1.0f;
+                }
+            } else {
+                rayDirection = rayDirection - 2.0*dot(rayDirection, normal) * normal;
             }
+
             emiColor += spheres[nextSphere].emissionColor * matColor;
             matColor *= spheres[nextSphere].color;
 

@@ -73,6 +73,7 @@ void UserInterface::render() {
             glm::vec3 emiColor = selectedObj.getEmiColor();
             glm::vec3 rotation = selectedObj.getRotation();
             glm::vec3 size = selectedObj.getSize();
+            float reflexionRatio = selectedObj.getReflexionRatio();
 
             float posArray[3] = {position.x, position.y, position.z};
             float colorArray[3] = {color.r, color.g, color.b};
@@ -80,17 +81,6 @@ void UserInterface::render() {
             float rotArray[3] = {rotation.x, rotation.y, rotation.z};
             float sizeArray[3] = {size.x, size.y, size.z};
             float uniformScale = size.x;
-
-            ImGui::Text("Position");
-            bool updatePos = false;
-            if (ImGui::DragFloat("X##pos", &posArray[0], 0.01f, 0.0f, 0.0f, "%.2f")) updatePos = true;
-            if (ImGui::DragFloat("Y##pos", &posArray[1], 0.01f, 0.0f, 0.0f, "%.2f")) updatePos = true;
-            if (ImGui::DragFloat("Z##pos", &posArray[2], 0.01f, 0.0f, 0.0f, "%.2f")) updatePos = true;
-            if (updatePos) {
-                selectedObj.setPos(glm::vec3(posArray[0], posArray[1], posArray[2]));
-                UI_isModified = true;
-                UI_shouldReset = true;
-            }
 
             if (ImGui::ColorEdit3("Color", colorArray)) {
                 selectedObj.setColor(glm::vec3(colorArray[0], colorArray[1], colorArray[2]));
@@ -100,6 +90,23 @@ void UserInterface::render() {
 
             if (ImGui::ColorEdit3("Emiss. Color", emiColorArray)) {
                 selectedObj.setEmiColor(glm::vec3(emiColorArray[0], emiColorArray[1], emiColorArray[2]));
+                UI_isModified = true;
+                UI_shouldReset = true;
+            }
+
+            if (ImGui::DragFloat("Reflex. Ratio", &reflexionRatio, 0.01f, 0.0f, 1.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
+                selectedObj.setReflexionRatio(reflexionRatio);
+                UI_isModified = true;
+                UI_shouldReset = true;
+            }
+
+            ImGui::Text("Position");
+            bool updatePos = false;
+            if (ImGui::DragFloat("X##pos", &posArray[0], 0.01f, 0.0f, 0.0f, "%.2f")) updatePos = true;
+            if (ImGui::DragFloat("Y##pos", &posArray[1], 0.01f, 0.0f, 0.0f, "%.2f")) updatePos = true;
+            if (ImGui::DragFloat("Z##pos", &posArray[2], 0.01f, 0.0f, 0.0f, "%.2f")) updatePos = true;
+            if (updatePos) {
+                selectedObj.setPos(glm::vec3(posArray[0], posArray[1], posArray[2]));
                 UI_isModified = true;
                 UI_shouldReset = true;
             }

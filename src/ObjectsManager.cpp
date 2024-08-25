@@ -126,6 +126,7 @@ void ObjectManager::saveScene(const std::string &filename) {
         outfile << "POS " << objects[i].getPos().x << " " << objects[i].getPos().y << " " << objects[i].getPos().z << "\n";
         outfile << "COLOR " << objects[i].getColor().r << " " << objects[i].getColor().g << " " << objects[i].getColor().b << "\n";
         outfile << "EMICOLOR " << objects[i].getEmiColor().r << " " << objects[i].getEmiColor().g << " " << objects[i].getEmiColor().b << "\n";
+        outfile << "REFLEXIONRATIO " << objects[i].getReflexionRatio() << "\n";
         outfile << "SIZE " << objects[i].getSize().x << " " << objects[i].getSize().y << " " << objects[i].getSize().z << "\n";
         outfile << "ROTATION " << objects[i].getRotation().x << " " << objects[i].getRotation().y << " " << objects[i].getRotation().z << "\n";
         outfile << ".\n";
@@ -144,6 +145,7 @@ void ObjectManager::loadScene(const std::string &filename) {
 
     std::string mesh;
     glm::vec3 color(0.0f), emiColor(0.0f), pos(0.0f), size(1.0f), rotation(0.0f);
+    float reflexionRatio = 0.0f;
 
     while (infile >> word) {
         if (word == "MESH") {
@@ -154,6 +156,8 @@ void ObjectManager::loadScene(const std::string &filename) {
             infile >> color.x >> color.y >> color.z;
         } else if (word == "EMICOLOR") {
             infile >> emiColor.x >> emiColor.y >> emiColor.z;
+        } else if (word == "REFLEXIONRATIO") {
+            infile >> reflexionRatio;
         } else if (word == "SIZE") {
             infile >> size.x >> size.y >> size.z;
         } else if (word == "ROTATION") {
