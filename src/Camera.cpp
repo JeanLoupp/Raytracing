@@ -14,6 +14,7 @@ void Camera::mouse_button_callback(int button, int action) {
 void Camera::mouse_callback(double xpos, double ypos) {
 
     if (mouseButtonPressed) {
+        m_hasMoved = true;
 
         if (firstMouse) {
             lastX = xpos;
@@ -42,9 +43,19 @@ void Camera::mouse_callback(double xpos, double ypos) {
 }
 
 void Camera::scroll_callback(double xoffset, double yoffset) {
+    m_hasMoved = true;
+
     radius -= (float)yoffset * 0.2;
     if (radius < 0.0f) radius = 0.0f;
     cameraPos.x = radius * cos(glm::radians(yaw)) * cos(glm::radians(pitch));
     cameraPos.y = radius * sin(glm::radians(pitch));
     cameraPos.z = radius * sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+}
+
+bool Camera::hasMoved() {
+    if (m_hasMoved) {
+        m_hasMoved = false;
+        return true;
+    }
+    return false;
 }

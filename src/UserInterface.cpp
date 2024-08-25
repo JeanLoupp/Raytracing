@@ -59,11 +59,13 @@ void UserInterface::render() {
 
         glm::vec3 position = selectedObj.getPos();
         glm::vec3 color = selectedObj.getColor();
+        glm::vec3 emiColor = selectedObj.getEmiColor();
         glm::vec3 rotation = selectedObj.getRotation();
         glm::vec3 size = selectedObj.getSize();
 
         float posArray[3] = {position.x, position.y, position.z};
         float colorArray[3] = {color.r, color.g, color.b};
+        float emiColorArray[3] = {emiColor.r, emiColor.g, emiColor.b};
         float rotArray[3] = {rotation.x, rotation.y, rotation.z};
         float sizeArray[3] = {size.x, size.y, size.z};
         float uniformScale = size.x;
@@ -83,6 +85,11 @@ void UserInterface::render() {
             UI_isModified = true;
         }
 
+        if (ImGui::ColorEdit3("Emiss. Color", emiColorArray)) {
+            selectedObj.setEmiColor(glm::vec3(emiColorArray[0], emiColorArray[1], emiColorArray[2]));
+            UI_isModified = true;
+        }
+
         ImGui::Text("Rotation");
         bool updateRot = false;
         if (ImGui::DragFloat("X##rot", &rotArray[0], 0.2f, -360.0f, 360.0f, "%.0f", ImGuiSliderFlags_AlwaysClamp)) updateRot = true;
@@ -96,15 +103,15 @@ void UserInterface::render() {
         ImGui::Text("Scale");
         ImGui::Checkbox("Uniform Size", &UI_uniformSize);
         if (UI_uniformSize) {
-            if (ImGui::DragFloat("Scale", &uniformScale, 0.01f, 0.0f, 50.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
+            if (ImGui::DragFloat("Scale", &uniformScale, 0.01f, 0.0f, 0.0f, "%.2f")) {
                 selectedObj.setSize(uniformScale);
                 UI_isModified = true;
             }
         } else {
             bool updateScale = false;
-            if (ImGui::DragFloat("X##scale", &sizeArray[0], 0.01f, 0.0f, 50.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp)) updateScale = true;
-            if (ImGui::DragFloat("Y##scale", &sizeArray[1], 0.01f, 0.0f, 50.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp)) updateScale = true;
-            if (ImGui::DragFloat("Z##scale", &sizeArray[2], 0.01f, 0.0f, 50.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp)) updateScale = true;
+            if (ImGui::DragFloat("X##scale", &sizeArray[0], 0.01f, 0.0f, 0.0f, "%.2f")) updateScale = true;
+            if (ImGui::DragFloat("Y##scale", &sizeArray[1], 0.01f, 0.0f, 0.0f, "%.2f")) updateScale = true;
+            if (ImGui::DragFloat("Z##scale", &sizeArray[2], 0.01f, 0.0f, 0.0f, "%.2f")) updateScale = true;
             if (updateScale) {
                 selectedObj.setSize(glm::vec3(sizeArray[0], sizeArray[1], sizeArray[2]));
                 UI_isModified = true;

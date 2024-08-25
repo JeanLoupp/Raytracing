@@ -11,9 +11,9 @@ class ObjectManager {
 public:
     void addMesh(std::shared_ptr<Mesh>);
     int addObject(Material material, unsigned int meshIdx);
-    int addObject(Material material, std::string meshName);
+    int addObject(Material material, const std::string &meshName);
     int addObject(unsigned int meshIdx);
-    int addObject(std::string meshName);
+    int addObject(const std::string &meshName);
     void drawAll(ShaderProgram &shaderProgram);
     void genNames();
     void genMeshNames();
@@ -22,6 +22,9 @@ public:
     Material &getObject(int idx) { return objects[idx]; }
     void removeObject(int idx);
     void loadMeshes();
+
+    const std::vector<int> &getObjectsPerMesh(const std::string &meshName);
+    const std::vector<int> &getObjectsPerMesh(unsigned int meshIdx);
 
     void saveScene(const std::string &filename);
     void loadScene(const std::string &filename);

@@ -29,7 +29,7 @@ int ObjectManager::addObject(Material material, unsigned int meshIdx) {
     return objects.size() - 1;
 }
 
-int ObjectManager::addObject(Material material, std::string meshName) {
+int ObjectManager::addObject(Material material, const std::string &meshName) {
     const auto &it = meshNamesMap.find(meshName);
     if (it == meshNamesMap.end()) std::cerr << "Invalid meshName in addObject: " << meshName << std::endl;
     return addObject(material, it->second);
@@ -43,10 +43,20 @@ int ObjectManager::addObject(unsigned int meshIdx) {
     return objects.size() - 1;
 }
 
-int ObjectManager::addObject(std::string meshName) {
+int ObjectManager::addObject(const std::string &meshName) {
     const auto &it = meshNamesMap.find(meshName);
     if (it == meshNamesMap.end()) std::cerr << "Invalid meshName in addObject: " << meshName << std::endl;
     return addObject(it->second);
+}
+
+const std::vector<int> &ObjectManager::getObjectsPerMesh(unsigned int meshIdx) {
+    return objectsPerMesh[meshIdx];
+}
+
+const std::vector<int> &ObjectManager::getObjectsPerMesh(const std::string &meshName) {
+    const auto &it = meshNamesMap.find(meshName);
+    if (it == meshNamesMap.end()) std::cerr << "Invalid meshName in addObject: " << meshName << std::endl;
+    return getObjectsPerMesh(it->second);
 }
 
 void ObjectManager::drawAll(ShaderProgram &shaderProgram) {
@@ -115,6 +125,7 @@ void ObjectManager::saveScene(const std::string &filename) {
         outfile << "MESH " << meshNames[idxToMesh[i].first] << "\n";
         outfile << "POS " << objects[i].getPos().x << " " << objects[i].getPos().y << " " << objects[i].getPos().z << "\n";
         outfile << "COLOR " << objects[i].getColor().r << " " << objects[i].getColor().g << " " << objects[i].getColor().b << "\n";
+        outfile << "EMICOLOR " << objects[i].getEmiColor().r << " " << objects[i].getEmiColor().g << " " << objects[i].getEmiColor().b << "\n";
         outfile << "SIZE " << objects[i].getSize().x << " " << objects[i].getSize().y << " " << objects[i].getSize().z << "\n";
         outfile << "ROTATION " << objects[i].getRotation().x << " " << objects[i].getRotation().y << " " << objects[i].getRotation().z << "\n";
         outfile << ".\n";
@@ -132,7 +143,7 @@ void ObjectManager::loadScene(const std::string &filename) {
     std::string word;
 
     std::string mesh;
-    glm::vec3 color, pos, size, rotation;
+    glm::vec3 color(0.0f), emiColor(0.0f), pos(0.0f), size(1.0f), rotation(0.0f);
 
     while (infile >> word) {
         if (word == "MESH") {
@@ -141,12 +152,14 @@ void ObjectManager::loadScene(const std::string &filename) {
             infile >> pos.x >> pos.y >> pos.z;
         } else if (word == "COLOR") {
             infile >> color.x >> color.y >> color.z;
+        } else if (word == "EMICOLOR") {
+            infile >> emiColor.x >> emiColor.y >> emiColor.z;
         } else if (word == "SIZE") {
             infile >> size.x >> size.y >> size.z;
         } else if (word == "ROTATION") {
             infile >> rotation.x >> rotation.y >> rotation.z;
         } else if (word == ".") {
-            addObject(Material(color, Transformation(pos, size, rotation)), mesh);
+            addObject(Material(color, emiColor, Transformation(pos, size, rotation)), mesh);
         }
     }
 

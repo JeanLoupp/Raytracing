@@ -31,7 +31,7 @@ Camera camera;
 GLFWwindow *window;
 bool wireframeMode = false;
 
-glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
+glm::vec3 lightPos(0.0f, 2.0f, 2.0f);
 glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
 
 bool useRaytracing = false;
@@ -90,9 +90,6 @@ GLuint genTexture(int width, int height) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
-
     return texture;
 }
 
@@ -105,7 +102,7 @@ void initGLFW() {
 }
 
 bool initWindow() {
-    window = glfwCreateWindow(SCR_WIDTH + UIwidth, SCR_HEIGHT, "My Project", nullptr, nullptr);
+    window = glfwCreateWindow(SCR_WIDTH + UIwidth, SCR_HEIGHT, "Raytracing", nullptr, nullptr);
     if (window == nullptr) {
         std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -162,13 +159,16 @@ int main() {
 
     ComputeShader computeShaderProgram("shaders/compute_shader.glsl");
 
-    GLuint texOutput = genTexture(SCR_WIDTH, SCR_HEIGHT);
+    GLuint texOutput1 = genTexture(SCR_WIDTH, SCR_HEIGHT);
+    GLuint texOutput2 = genTexture(SCR_WIDTH, SCR_HEIGHT);
 
     ObjectManager objManager;
     objManager.loadMeshes();
     objManager.loadScene(scenePath);
 
     UserInterface UI(window, UIwidth, scenePath, &objManager);
+
+    int frameCount = 0;
 
     // Boucle de rendu
     while (!glfwWindowShouldClose(window)) {
@@ -183,26 +183,52 @@ int main() {
 
         } else {
 
+            if (camera.hasMoved()) frameCount = 0;
+
             computeShaderProgram.use();
 
-            glBindImageTexture(0, texOutput, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, texOutput1);
+            computeShaderProgram.set("prevImage", 0);
 
-            computeShaderProgram.set("width", SCR_WIDTH);
-            computeShaderProgram.set("height", SCR_HEIGHT);
+            glBindImageTexture(0, texOutput2, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+
+            computeShaderProgram.set("frameCount", frameCount);
+
+            computeShaderProgram.set("width", (int)SCR_WIDTH);
+            computeShaderProgram.set("height", (int)SCR_HEIGHT);
+            computeShaderProgram.set("cameraPosition", camera.getPos());
+            computeShaderProgram.set("viewMatrix", camera.getViewMat());
+
+            std::vector<int> spheres = objManager.getObjectsPerMesh("Sphere");
+            for (int i = 0; i < spheres.size(); i++) {
+                computeShaderProgram.setArray("spheres", i, "pos", objManager.getObject(spheres[i]).getPos());
+                computeShaderProgram.setArray("spheres", i, "r", objManager.getObject(spheres[i]).getSize()[0]);
+                computeShaderProgram.setArray("spheres", i, "color", objManager.getObject(spheres[i]).getColor());
+                computeShaderProgram.setArray("spheres", i, "emissionColor", objManager.getObject(spheres[i]).getEmiColor());
+            }
+
+            computeShaderProgram.set("sphereCount", (int)spheres.size());
 
             // Launch compute shader
-            glDispatchCompute((SCR_WIDTH + 15) / 16, (SCR_HEIGHT + 15) / 16, 1);
+            glDispatchCompute(SCR_WIDTH, SCR_HEIGHT, 1);
 
             // Wait for the compute shader to stop
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
             RTshaderProgram.use();
 
-            RTshaderProgram.set("renderedImage", 0);
-
             glBindVertexArray(quadMesh->getVAO());
+
+            RTshaderProgram.set("renderedImage", 0);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, texOutput1);
+
             glDrawElements(GL_TRIANGLES, quadMesh->getIndexCount(), GL_UNSIGNED_INT, 0);
             glBindVertexArray(0);
+
+            std::swap(texOutput1, texOutput2);
+            frameCount++;
         }
 
         UI.render();
@@ -215,7 +241,8 @@ int main() {
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
-    glDeleteTextures(1, &texOutput);
+    glDeleteTextures(1, &texOutput1);
+    glDeleteTextures(1, &texOutput2);
 
     glfwDestroyWindow(window);
     glfwTerminate();

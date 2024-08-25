@@ -66,7 +66,7 @@ Mesh::Mesh(const std::vector<glm::vec3> &vertices, const std::vector<glm::vec3> 
     if (hasTextures) {
         glBindBuffer(GL_ARRAY_BUFFER, TBO);
         glBufferData(GL_ARRAY_BUFFER, textures.size() * sizeof(glm::vec2), textures.data(), GL_STATIC_DRAW);
-        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void *)0);
         glEnableVertexAttribArray(2);
     }
 
@@ -245,8 +245,7 @@ std::shared_ptr<Mesh> Mesh::createPlane() {
         {0, 1.0f, 0},
     };
 
-    std::vector<unsigned int> indices = {
-        0, 1, 2, 3, 2, 1};
+    std::vector<unsigned int> indices = {0, 1, 2, 3, 2, 1};
 
     return std::make_shared<Mesh>(vertices, normals, indices, "Plane");
 }
@@ -254,21 +253,21 @@ std::shared_ptr<Mesh> Mesh::createPlane() {
 std::shared_ptr<Mesh> Mesh::createQuad() {
     std::vector<glm::vec3> vertices = {
         {-1.0f, 1.0f, 0.0f},
-        {-1.0f, -1.0f, 0.0f},
-        {1.0f, -1.0f, 0.0f},
         {1.0f, 1.0f, 0.0f},
+        {1.0f, -1.0f, 0.0f},
+        {-1.0f, -1.0f, 0.0f},
     };
 
     std::vector<glm::vec3> normals;
 
     std::vector<glm::vec2> textures = {
         {0.0f, 1.0f},
-        {0.0f, 0.0f},
-        {1.0f, 0.0f},
         {1.0f, 1.0f},
+        {1.0f, 0.0f},
+        {0.0f, 0.0f},
     };
 
-    std::vector<unsigned int> indices = {0, 1, 2, 2, 3, 0};
+    std::vector<unsigned int> indices = {0, 2, 1, 0, 3, 2};
 
     return std::make_shared<Mesh>(vertices, normals, textures, indices, "Quad");
 }

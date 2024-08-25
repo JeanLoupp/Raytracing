@@ -24,6 +24,8 @@ public:
 
     const glm::vec3 &getPos() const { return cameraPos; }
 
+    bool hasMoved();
+
 private:
     float lastX = 0;
     float lastY = 0;
@@ -36,6 +38,7 @@ private:
     glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
     bool firstMouse = true;
     bool mouseButtonPressed = false;
+    bool m_hasMoved = true;
 };
 
 #endif // CAMERA_HPP
