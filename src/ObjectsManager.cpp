@@ -123,10 +123,11 @@ void ObjectManager::saveScene(const std::string &filename) {
     }
     for (int i = 0; i < objects.size(); i++) {
         outfile << "MESH " << meshNames[idxToMesh[i].first] << "\n";
-        outfile << "POS " << objects[i].getPos().x << " " << objects[i].getPos().y << " " << objects[i].getPos().z << "\n";
         outfile << "COLOR " << objects[i].getColor().r << " " << objects[i].getColor().g << " " << objects[i].getColor().b << "\n";
         outfile << "EMICOLOR " << objects[i].getEmiColor().r << " " << objects[i].getEmiColor().g << " " << objects[i].getEmiColor().b << "\n";
-        outfile << "REFLEXIONRATIO " << objects[i].getReflexionRatio() << "\n";
+        outfile << "SMOOTHNESS " << objects[i].getSmoothness() << "\n";
+        outfile << "REFLEXIVITY " << objects[i].getReflexivity() << "\n";
+        outfile << "POS " << objects[i].getPos().x << " " << objects[i].getPos().y << " " << objects[i].getPos().z << "\n";
         outfile << "SIZE " << objects[i].getSize().x << " " << objects[i].getSize().y << " " << objects[i].getSize().z << "\n";
         outfile << "ROTATION " << objects[i].getRotation().x << " " << objects[i].getRotation().y << " " << objects[i].getRotation().z << "\n";
         outfile << ".\n";
@@ -145,25 +146,28 @@ void ObjectManager::loadScene(const std::string &filename) {
 
     std::string mesh;
     glm::vec3 color(0.0f), emiColor(0.0f), pos(0.0f), size(1.0f), rotation(0.0f);
-    float reflexionRatio = 0.0f;
+    float smoothness = 1.0f;
+    float reflexivity = 0.0f;
 
     while (infile >> word) {
         if (word == "MESH") {
             infile >> mesh;
-        } else if (word == "POS") {
-            infile >> pos.x >> pos.y >> pos.z;
         } else if (word == "COLOR") {
             infile >> color.x >> color.y >> color.z;
         } else if (word == "EMICOLOR") {
             infile >> emiColor.x >> emiColor.y >> emiColor.z;
-        } else if (word == "REFLEXIONRATIO") {
-            infile >> reflexionRatio;
+        } else if (word == "SMOOTHNESS") {
+            infile >> smoothness;
+        } else if (word == "REFLEXIVITY") {
+            infile >> reflexivity;
+        } else if (word == "POS") {
+            infile >> pos.x >> pos.y >> pos.z;
         } else if (word == "SIZE") {
             infile >> size.x >> size.y >> size.z;
         } else if (word == "ROTATION") {
             infile >> rotation.x >> rotation.y >> rotation.z;
         } else if (word == ".") {
-            addObject(Material(color, emiColor, Transformation(pos, size, rotation)), mesh);
+            addObject(Material(color, emiColor, smoothness, reflexivity, Transformation(pos, size, rotation)), mesh);
         }
     }
 

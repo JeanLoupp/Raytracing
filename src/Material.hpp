@@ -11,16 +11,16 @@
 class Material {
 public:
     Material()
-        : color(0.3f), emissionColor(0.0f), reflexionRatio(0.0f), pos(0.0f), rotation(0.0f), size(1.0f) { genModel(); }
+        : color(0.3f), emissionColor(0.0f), smoothness(0.0f), reflexivity(0.0f), pos(0.0f), rotation(0.0f), size(1.0f) { genModel(); }
 
     Material(glm::vec3 color, Transformation tranfo)
-        : color(color), emissionColor(0.0f), reflexionRatio(0.0f), pos(tranfo.position), rotation(tranfo.rotation), size(tranfo.scale) { genModel(); };
+        : color(color), emissionColor(0.0f), smoothness(0.0f), reflexivity(0.0f), pos(tranfo.position), rotation(tranfo.rotation), size(tranfo.scale) { genModel(); };
 
     Material(glm::vec3 color, glm::vec3 emiColor, Transformation tranfo)
-        : color(color), emissionColor(emiColor), reflexionRatio(0.0f), pos(tranfo.position), rotation(tranfo.rotation), size(tranfo.scale) { genModel(); };
+        : color(color), emissionColor(emiColor), smoothness(0.0f), reflexivity(0.0f), pos(tranfo.position), rotation(tranfo.rotation), size(tranfo.scale) { genModel(); };
 
-    Material(glm::vec3 color, glm::vec3 emiColor, float reflexionRatio, Transformation tranfo)
-        : color(color), emissionColor(emiColor), reflexionRatio(reflexionRatio), pos(tranfo.position), rotation(tranfo.rotation), size(tranfo.scale) { genModel(); };
+    Material(glm::vec3 color, glm::vec3 emiColor, float smoothness, float reflexivity, Transformation tranfo)
+        : color(color), emissionColor(emiColor), smoothness(smoothness), reflexivity(reflexivity), pos(tranfo.position), rotation(tranfo.rotation), size(tranfo.scale) { genModel(); };
 
     void draw(unsigned int shaderProgram) { mesh->draw(shaderProgram, color, modelMat); };
 
@@ -45,7 +45,8 @@ public:
 
     void setColor(const glm::vec3 &color) { this->color = color; }
     void setEmiColor(const glm::vec3 &color) { emissionColor = color; }
-    void setReflexionRatio(const float ratio) { reflexionRatio = ratio; }
+    void setSmoothness(const float val) { smoothness = val; }
+    void setReflexivity(const float ratio) { reflexivity = ratio; }
 
     const glm::vec3 &getColor() const { return color; }
     const glm::vec3 &getEmiColor() const { return emissionColor; }
@@ -53,7 +54,8 @@ public:
     const glm::vec3 &getSize() const { return size; }
     const glm::vec3 &getRotation() const { return rotation; }
     const glm::mat4 &getModel() const { return modelMat; }
-    float getReflexionRatio() { return reflexionRatio; }
+    float getSmoothness() { return smoothness; }
+    float getReflexivity() { return reflexivity; }
 
 private:
     std::shared_ptr<Mesh> mesh;
@@ -63,7 +65,8 @@ private:
     glm::vec3 pos;
     glm::vec3 rotation;
     glm::vec3 size;
-    float reflexionRatio;
+    float smoothness;
+    float reflexivity;
 
     glm::mat4 modelMat;
 };

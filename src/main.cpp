@@ -207,7 +207,8 @@ int main() {
                 computeShaderProgram.setArray("spheres", i, "r", objManager.getObject(spheres[i]).getSize()[0]);
                 computeShaderProgram.setArray("spheres", i, "color", objManager.getObject(spheres[i]).getColor());
                 computeShaderProgram.setArray("spheres", i, "emissionColor", objManager.getObject(spheres[i]).getEmiColor());
-                computeShaderProgram.setArray("spheres", i, "reflexionRatio", objManager.getObject(spheres[i]).getReflexionRatio());
+                computeShaderProgram.setArray("spheres", i, "smoothness", objManager.getObject(spheres[i]).getSmoothness());
+                computeShaderProgram.setArray("spheres", i, "reflexivity", objManager.getObject(spheres[i]).getReflexivity());
             }
 
             computeShaderProgram.set("sphereCount", (int)spheres.size());

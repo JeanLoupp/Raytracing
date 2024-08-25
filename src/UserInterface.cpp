@@ -73,7 +73,8 @@ void UserInterface::render() {
             glm::vec3 emiColor = selectedObj.getEmiColor();
             glm::vec3 rotation = selectedObj.getRotation();
             glm::vec3 size = selectedObj.getSize();
-            float reflexionRatio = selectedObj.getReflexionRatio();
+            float smoothness = selectedObj.getSmoothness();
+            float reflexivity = selectedObj.getReflexivity();
 
             float posArray[3] = {position.x, position.y, position.z};
             float colorArray[3] = {color.r, color.g, color.b};
@@ -94,8 +95,14 @@ void UserInterface::render() {
                 UI_shouldReset = true;
             }
 
-            if (ImGui::DragFloat("Reflex. Ratio", &reflexionRatio, 0.01f, 0.0f, 1.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
-                selectedObj.setReflexionRatio(reflexionRatio);
+            if (ImGui::SliderFloat("Smoothness", &smoothness, 0.0f, 1.0f, "%.2f")) {
+                selectedObj.setSmoothness(smoothness);
+                UI_isModified = true;
+                UI_shouldReset = true;
+            }
+
+            if (ImGui::SliderFloat("Reflexivity", &reflexivity, 0.0f, 1.0f, "%.2f")) {
+                selectedObj.setReflexivity(reflexivity);
                 UI_isModified = true;
                 UI_shouldReset = true;
             }
