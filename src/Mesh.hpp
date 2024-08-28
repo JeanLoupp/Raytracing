@@ -21,6 +21,7 @@ public:
     static std::shared_ptr<Mesh> createPlane();
     static std::shared_ptr<Mesh> createBox();
     static std::shared_ptr<Mesh> createQuad();
+    static std::shared_ptr<Mesh> createTore(int resolution = 16);
 
     const unsigned int getVAO() const { return VAO; }
     const unsigned int getIndexCount() const { return indexCount; }
@@ -28,11 +29,19 @@ public:
     void setName(std::string newName) { name = newName; }
     std::string getName() const { return name; }
 
+    const std::vector<glm::vec3> &getVertices() const { return vertices; }
+    const std::vector<glm::vec3> &getNormals() const { return normals; }
+    const std::vector<unsigned int> &getIndices() const { return indices; }
+
 private:
     unsigned int VAO, VBO, NBO, TBO, EBO;
     bool hasNormals, hasTextures;
     size_t indexCount;
     std::string name;
+
+    std::vector<glm::vec3> vertices;
+    std::vector<glm::vec3> normals;
+    std::vector<unsigned int> indices;
 };
 
 #endif // MESH_HPP

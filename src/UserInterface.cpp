@@ -45,6 +45,7 @@ void UserInterface::render() {
                     UI_selectedObj = objManager->addObject(n);
                     UI_isModified = true;
                     UI_shouldReset = true;
+                    UI_resetTriangleBuff = true;
                 }
             }
             ImGui::EndCombo();
@@ -152,6 +153,9 @@ void UserInterface::render() {
             if (ImGui::Button("Delete")) {
                 objManager->removeObject(UI_selectedObj);
                 UI_selectedObj = 0;
+                UI_isModified = true;
+                UI_shouldReset = true;
+                UI_resetTriangleBuff = true;
             }
 
             float button_height_with_spacing = ImGui::GetFrameHeightWithSpacing() * 3;
@@ -191,6 +195,14 @@ void UserInterface::render() {
 bool UserInterface::shouldReset() {
     if (UI_shouldReset) {
         UI_shouldReset = false;
+        return true;
+    }
+    return false;
+}
+
+bool UserInterface::shouldResetTriBuff() {
+    if (UI_resetTriangleBuff) {
+        UI_resetTriangleBuff = false;
         return true;
     }
     return false;

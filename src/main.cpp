@@ -23,7 +23,7 @@
 unsigned int SCR_WIDTH = 800;
 unsigned int SCR_HEIGHT = 600;
 
-char scenePath[64] = "scene.scene";
+char scenePath[64] = "JO.scene";
 
 const int UIwidth = 300;
 
@@ -91,6 +91,28 @@ GLuint genTexture(int width, int height) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
 
     return texture;
+}
+
+GLuint genTrianglesSSBO(const std::vector<Triangle> &triangles) {
+
+    GLuint ssbo;
+    glGenBuffers(1, &ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, triangles.size() * sizeof(Triangle), triangles.data(), GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo); // binding 1 in compute shader
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    return ssbo;
+}
+
+GLuint resetTrianglesSSBO(GLuint &oldSsbo, const std::vector<Triangle> &triangles) {
+    glDeleteBuffers(1, &oldSsbo);
+    return genTrianglesSSBO(triangles);
+}
+
+void updateTrianglesSSBO(GLuint &ssbo, const std::vector<Triangle> &triangles) {
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, triangles.size() * sizeof(Triangle), triangles.data());
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
 // inits
@@ -166,6 +188,9 @@ int main() {
     objManager.loadMeshes();
     objManager.loadScene(scenePath);
 
+    objManager.genAllTriangles();
+    GLuint ssboTri = genTrianglesSSBO(objManager.getTriangles());
+
     UserInterface UI(window, UIwidth, scenePath, &objManager);
 
     int frameCount = 0;
@@ -176,14 +201,25 @@ int main() {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        if (UI.shouldResetTriBuff()) {
+            objManager.genAllTriangles();
+            ssboTri = resetTrianglesSSBO(ssboTri, objManager.getTriangles());
+            frameCount = 0;
+            UI.shouldReset();
+        } else if (UI.shouldReset()) {
+            frameCount = 0;
+            objManager.genAllTriangles(); // TODO: only update when model matrix is changed
+            updateTrianglesSSBO(ssboTri, objManager.getTriangles());
+        }
+
+        if (camera.hasMoved()) frameCount = 0;
+
         if (!useRaytracing) {
             beginRender(shaderProgram);
 
             objManager.drawAll(shaderProgram);
 
         } else {
-
-            if (camera.hasMoved() || UI.shouldReset()) frameCount = 0;
 
             computeShaderProgram.use();
 
@@ -205,13 +241,39 @@ int main() {
             for (int i = 0; i < spheres.size(); i++) {
                 computeShaderProgram.setArray("spheres", i, "pos", objManager.getObject(spheres[i]).getPos());
                 computeShaderProgram.setArray("spheres", i, "r", objManager.getObject(spheres[i]).getSize()[0]);
-                computeShaderProgram.setArray("spheres", i, "color", objManager.getObject(spheres[i]).getColor());
-                computeShaderProgram.setArray("spheres", i, "emissionColor", objManager.getObject(spheres[i]).getEmiColor());
-                computeShaderProgram.setArray("spheres", i, "smoothness", objManager.getObject(spheres[i]).getSmoothness());
-                computeShaderProgram.setArray("spheres", i, "reflexivity", objManager.getObject(spheres[i]).getReflexivity());
+                computeShaderProgram.setArray("spheres", i, "mat.color", objManager.getObject(spheres[i]).getColor());
+                computeShaderProgram.setArray("spheres", i, "mat.emissionColor", objManager.getObject(spheres[i]).getEmiColor());
+                computeShaderProgram.setArray("spheres", i, "mat.smoothness", objManager.getObject(spheres[i]).getSmoothness());
+                computeShaderProgram.setArray("spheres", i, "mat.reflexivity", objManager.getObject(spheres[i]).getReflexivity());
             }
 
             computeShaderProgram.set("sphereCount", (int)spheres.size());
+
+            std::vector<int> tores = objManager.getObjectsPerMesh("Tore");
+            for (int i = 0; i < tores.size(); i++) {
+                computeShaderProgram.setArray("tores", i, "pos", objManager.getObject(tores[i]).getPos());
+                computeShaderProgram.setArray("tores", i, "R", objManager.getObject(tores[i]).getSize()[0]);
+                computeShaderProgram.setArray("tores", i, "r", 0.1f);
+                computeShaderProgram.setArray("tores", i, "mat.color", objManager.getObject(tores[i]).getColor());
+                computeShaderProgram.setArray("tores", i, "mat.emissionColor", objManager.getObject(tores[i]).getEmiColor());
+                computeShaderProgram.setArray("tores", i, "mat.smoothness", objManager.getObject(tores[i]).getSmoothness());
+                computeShaderProgram.setArray("tores", i, "mat.reflexivity", objManager.getObject(tores[i]).getReflexivity());
+            }
+
+            computeShaderProgram.set("toreCount", (int)tores.size());
+
+            std::vector<TriangleMeshInfo> trianglesInfo = objManager.getTriangleToObject();
+            for (int i = 0; i < trianglesInfo.size(); i++) {
+
+                computeShaderProgram.setArray("triangleMeshes", i, "startIdx", trianglesInfo[i].startIdx);
+                computeShaderProgram.setArray("triangleMeshes", i, "endIdx", trianglesInfo[i].endIdx);
+                computeShaderProgram.setArray("triangleMeshes", i, "mat.color", objManager.getObject(trianglesInfo[i].matIdx).getColor());
+                computeShaderProgram.setArray("triangleMeshes", i, "mat.emissionColor", objManager.getObject(trianglesInfo[i].matIdx).getEmiColor());
+                computeShaderProgram.setArray("triangleMeshes", i, "mat.smoothness", objManager.getObject(trianglesInfo[i].matIdx).getSmoothness());
+                computeShaderProgram.setArray("triangleMeshes", i, "mat.reflexivity", objManager.getObject(trianglesInfo[i].matIdx).getReflexivity());
+            }
+
+            computeShaderProgram.set("triangleMeshCount", (int)trianglesInfo.size());
 
             // Launch compute shader
             glDispatchCompute((SCR_WIDTH + 15) / 16, (SCR_HEIGHT + 15) / 16, 1);

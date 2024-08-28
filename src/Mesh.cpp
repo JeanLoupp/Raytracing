@@ -10,7 +10,7 @@
 
 // Constructeur de la classe Mesh
 Mesh::Mesh(const std::vector<glm::vec3> &vertices, const std::vector<glm::vec3> &normals, const std::vector<unsigned int> &indices, std::string name)
-    : indexCount(indices.size()), name(name) {
+    : vertices(vertices), normals(normals), indices(indices), indexCount(indices.size()), name(name) {
 
     hasTextures = false;
 
@@ -38,7 +38,7 @@ Mesh::Mesh(const std::vector<glm::vec3> &vertices, const std::vector<glm::vec3> 
 }
 
 Mesh::Mesh(const std::vector<glm::vec3> &vertices, const std::vector<glm::vec3> &normals, const std::vector<glm::vec2> &textures, const std::vector<unsigned int> &indices, std::string name)
-    : indexCount(indices.size()), name(name) {
+    : vertices(vertices), normals(normals), indices(indices), indexCount(indices.size()), name(name) {
 
     hasTextures = (textures.size() != 0);
     hasNormals = (normals.size() != 0);
@@ -350,4 +350,55 @@ std::shared_ptr<Mesh> Mesh::createBox() {
         21, 22, 20, 23, 20, 22};
 
     return std::make_shared<Mesh>(vertices, normals, indices, "Box");
+}
+
+std::shared_ptr<Mesh> Mesh::createTore(int resolution) {
+
+    int total = resolution * resolution;
+
+    std::vector<glm::vec3> vertices;
+    std::vector<glm::vec3> normals;
+    std::vector<unsigned int> indices;
+
+    glm::vec3 pos;
+    float phi, theta;
+
+    int triShift[6][2] = {{0, 0}, {1, 1}, {0, 1}, {0, 0}, {1, 0}, {1, 1}};
+
+    for (int i = 0; i <= resolution; i++) {
+        for (int j = 0; j <= resolution; j++) {
+            phi = -i * 2 * PI / resolution; // col
+            theta = j * PI / resolution;    // li
+
+            pos[0] = glm::sin(theta) * glm::cos(phi);
+            pos[2] = glm::sin(theta) * glm::sin(phi);
+            pos[1] = glm::cos(theta);
+
+            vertices.push_back(pos);
+            normals.push_back(pos);
+
+            if (i == resolution || j == resolution) continue;
+
+            // Calculate triangle indices
+            int nextRow = (i + 1);
+            int nextCol = (j + 1);
+
+            int current = j * (resolution + 1) + i;
+            int next = j * (resolution + 1) + nextRow;
+            int diagonal = nextCol * (resolution + 1) + i;
+            int nextDiagonal = nextCol * (resolution + 1) + nextRow;
+
+            // Triangle 1
+            indices.push_back(current);
+            indices.push_back(next);
+            indices.push_back(diagonal);
+
+            // Triangle 2
+            indices.push_back(next);
+            indices.push_back(nextDiagonal);
+            indices.push_back(diagonal);
+        }
+    }
+
+    return std::make_shared<Mesh>(vertices, normals, indices, "Tore");
 }

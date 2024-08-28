@@ -19,6 +19,7 @@ void ObjectManager::loadMeshes() {
     addMesh(Mesh::createSphere());
     addMesh(Mesh::createBox());
     addMesh(Mesh::createPlane());
+    addMesh(Mesh::createTore());
 }
 
 int ObjectManager::addObject(Material material, unsigned int meshIdx) {
@@ -55,7 +56,7 @@ const std::vector<int> &ObjectManager::getObjectsPerMesh(unsigned int meshIdx) {
 
 const std::vector<int> &ObjectManager::getObjectsPerMesh(const std::string &meshName) {
     const auto &it = meshNamesMap.find(meshName);
-    if (it == meshNamesMap.end()) std::cerr << "Invalid meshName in addObject: " << meshName << std::endl;
+    if (it == meshNamesMap.end()) std::cerr << "Invalid meshName in getObjectsPerMesh: " << meshName << std::endl;
     return getObjectsPerMesh(it->second);
 }
 
@@ -172,4 +173,43 @@ void ObjectManager::loadScene(const std::string &filename) {
     }
 
     infile.close();
+}
+
+void ObjectManager::genAllTriangles() {
+    trianglesBuffer.clear();
+    triangleToMat.clear();
+
+    std::vector<glm::vec3> transVertices;
+    std::vector<glm::vec3> transNormals;
+
+    std::vector<std::string> triangleMeshes = {"Plane", "Cube", "Box"};
+    for (std::string &meshName : triangleMeshes) {
+
+        int meshIdx = meshNamesMap[meshName];
+
+        const std::vector<glm::vec3> &vertices = meshes[meshIdx]->getVertices();
+        const std::vector<glm::vec3> &normals = meshes[meshIdx]->getNormals();
+        const std::vector<unsigned int> &indices = meshes[meshIdx]->getIndices();
+
+        for (int idx : getObjectsPerMesh(meshName)) {
+
+            triangleToMat.emplace_back(idx, trianglesBuffer.size(), trianglesBuffer.size() + indices.size() / 3);
+
+            transVertices.resize(vertices.size());
+            transNormals.resize(normals.size());
+
+            const glm::mat4 &model = objects[idx].getModel();
+            glm::mat3 modelNorm = glm::mat3(transpose(inverse(model)));
+
+            for (int i = 0; i < vertices.size(); i++) {
+                transVertices[i] = glm::vec3(model * glm::vec4(vertices[i], 1.0));
+                // TODO: one normal per vertex
+                transNormals[i] = normalize(glm::vec3(modelNorm * normals[i]));
+            }
+            for (int i = 0; i < indices.size(); i += 3) {
+                // TODO: one normal per vertex
+                trianglesBuffer.emplace_back(transVertices[indices[i]], transVertices[indices[i + 1]], transVertices[indices[i + 2]], transNormals[indices[i]]);
+            }
+        }
+    }
 }

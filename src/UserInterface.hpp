@@ -13,16 +13,18 @@ public:
     void render();
 
     bool shouldReset();
+    bool shouldResetTriBuff();
 
 private:
     int UI_selectedObj = 0;
-    bool UI_uniformSize = false;
+    bool UI_uniformSize = true;
     bool UI_showOpen = false;
     bool UI_isModified = false;
     char UI_filename[64];
 
     int page = 0;
-    bool UI_shouldReset = true;
+    bool UI_shouldReset = false;
+    bool UI_resetTriangleBuff = false;
 
     int UIwidth;
     GLFWwindow *window;
