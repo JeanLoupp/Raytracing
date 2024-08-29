@@ -33,8 +33,6 @@ make -C build
 - glm: https://github.com/g-truc/glm
 - glad: https://gen.glad.sh/
 
-You may need to generate your glad files for your machine.
-
 # Gallery
 ![demo](<data/output/JO boite reflet.png>)
 ![demo](<data/output/JO full reflets.png>)
