@@ -22,6 +22,7 @@ uniform int maxBounces;
 struct Material{
     vec3 color;
     vec3 emissionColor;
+    float emissionStrength;
     float smoothness;
     float reflexivity;
 };
@@ -264,7 +265,7 @@ HitInfo sendRay(vec3 origin, vec3 direction){
             n2 = cross(triangles[j].v2 - triangles[j].v1, p - triangles[j].v1);
             n3 = cross(triangles[j].v0 - triangles[j].v2, p - triangles[j].v2);
 
-            if (dot(n1, n2) >= 0 && dot(n2, n3) >= 0 && dot(n3, n1) >= 0){
+            if (dot(n1, n2) >= -0.01 && dot(n2, n3) >= -0.01 && dot(n3, n1) >= -0.01){
                 if (t < intersection){
                     intersection = t;
                     hitType = 2;
@@ -294,9 +295,10 @@ HitInfo sendRay(vec3 origin, vec3 direction){
 
         vec3 translated = hitInfo.nextOrigin - tores[nextObj].pos;
         float commonTerm = dot(translated, translated) - tores[nextObj].r * tores[nextObj].r;
-        hitInfo.normal.x = 4.0 * translated.x * (commonTerm - tores[nextObj].R * tores[nextObj].R);
-        hitInfo.normal.y = 4.0 * translated.y * (commonTerm - tores[nextObj].R * tores[nextObj].R);
-        hitInfo.normal.z = 4.0 * translated.z * (commonTerm + tores[nextObj].R * tores[nextObj].R);
+        float R2 = tores[nextObj].R * tores[nextObj].R;
+        hitInfo.normal.x = 4.0 * translated.x * (commonTerm - R2);
+        hitInfo.normal.y = 4.0 * translated.y * (commonTerm - R2);
+        hitInfo.normal.z = 4.0 * translated.z * (commonTerm + R2);
 
         hitInfo.normal = normalize(hitInfo.normal);
 
@@ -306,6 +308,8 @@ HitInfo sendRay(vec3 origin, vec3 direction){
         hitInfo.normal = triangles[triangleHitIdx].normal;
 
     }
+
+    hitInfo.nextOrigin += hitInfo.normal * 0.001;
 
     return hitInfo;
 }
@@ -326,6 +330,8 @@ vec3 getAmbientLight(vec3 direction){
 void main() {
 
     ivec2 pixelCoord = ivec2(gl_GlobalInvocationID.xy);
+
+    if (pixelCoord.x > width || pixelCoord.y > height) return;
 
     float aspect = float(width) / float(height);
 
@@ -358,7 +364,7 @@ void main() {
             rayDirection = mix(diffuseDir, specularDir, mat.smoothness * isReflexive);
             rayDirection = normalize(rayDirection);
 
-            emiColor += mat.emissionColor * matColor;
+            emiColor += mat.emissionColor * mat.emissionStrength * matColor;
             matColor *= mix(mat.color, vec3(1.0), isReflexive);
 
             if (max(matColor.x, max(matColor.y, matColor.z)) < 0.005) break;

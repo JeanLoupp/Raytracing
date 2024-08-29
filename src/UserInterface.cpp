@@ -76,6 +76,7 @@ void UserInterface::render() {
             glm::vec3 size = selectedObj.getSize();
             float smoothness = selectedObj.getSmoothness();
             float reflexivity = selectedObj.getReflexivity();
+            float emissionStrength = selectedObj.getEmissionStrength();
 
             float posArray[3] = {position.x, position.y, position.z};
             float colorArray[3] = {color.r, color.g, color.b};
@@ -92,6 +93,12 @@ void UserInterface::render() {
 
             if (ImGui::ColorEdit3("Emiss. Color", emiColorArray)) {
                 selectedObj.setEmiColor(glm::vec3(emiColorArray[0], emiColorArray[1], emiColorArray[2]));
+                UI_isModified = true;
+                UI_shouldReset = true;
+            }
+
+            if (ImGui::DragFloat("EmissionStrength", &emissionStrength, 0.01f, 0.0f, 100.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
+                selectedObj.setEmissionStrength(emissionStrength);
                 UI_isModified = true;
                 UI_shouldReset = true;
             }

@@ -19,11 +19,20 @@
 #include "utils.hpp"
 #include "UserInterface.hpp"
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
 // Constants and global variables
 unsigned int SCR_WIDTH = 800;
-unsigned int SCR_HEIGHT = 600;
+unsigned int SCR_HEIGHT = 800;
 
-char scenePath[64] = "JO.scene";
+const int textureWidth = 1600;
+const int textureHeight = 1600;
+
+GLuint texOutput1;
+GLuint texOutput2;
+
+char scenePath[64] = "scene.scene";
 
 const int UIwidth = 300;
 
@@ -35,6 +44,28 @@ glm::vec3 lightPos(0.0f, 2.0f, 2.0f);
 glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
 
 bool useRaytracing = false;
+
+// Fonction pour sauvegarder l'écran
+void SaveScreenshot(const char *filename, int width, int height) {
+    std::vector<unsigned char> pixels(width * height * 3); // RGB
+
+    // Lire les pixels de la fenêtre actuelle
+    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+
+    // Inverser l'image verticalement
+    for (int y = 0; y < height / 2; ++y) {
+        for (int x = 0; x < width * 3; ++x) {
+            std::swap(pixels[y * width * 3 + x], pixels[(height - y - 1) * width * 3 + x]);
+        }
+    }
+
+    // Sauvegarder l'image au format PNG
+    if (stbi_write_png(filename, width, height, 3, pixels.data(), width * 3)) {
+        std::cout << "Screenshot saved to " << filename << std::endl;
+    } else {
+        std::cout << "Failed to save screenshot" << std::endl;
+    }
+}
 
 // Callback functions
 void framebuffer_size_callback(GLFWwindow *window, int width, int height) {
@@ -76,6 +107,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         }
     } else if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
         useRaytracing = !useRaytracing;
+    } else if (key == GLFW_KEY_P && action == GLFW_PRESS) {
+        SaveScreenshot("data/output/texture.png", SCR_WIDTH + UIwidth, SCR_HEIGHT);
     }
 }
 
@@ -174,6 +207,27 @@ void beginRender(ShaderProgram &shaderProgram) {
 int main() {
     if (!init()) return -1;
 
+    ///////////////////
+
+    // Taille maximale pour chaque dimension X, Y, Z
+    GLint workGroupSize[3];
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &workGroupSize[0]);
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &workGroupSize[1]);
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &workGroupSize[2]);
+
+    // Nombre total maximal d'invocations
+    GLint maxWorkGroupInvocations;
+    glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &maxWorkGroupInvocations);
+
+    // Affichage
+    std::cout << "Max work group size: X=" << workGroupSize[0]
+              << ", Y=" << workGroupSize[1]
+              << ", Z=" << workGroupSize[2] << std::endl;
+
+    std::cout << "Max work group invocations: " << maxWorkGroupInvocations << std::endl;
+
+    ///////////////////////
+
     ShaderProgram shaderProgram("shaders/vertex_shader.glsl", "shaders/fragment_shader.glsl");
     ShaderProgram RTshaderProgram("shaders/vert_shader_rt.glsl", "shaders/frag_shader_rt.glsl");
 
@@ -181,8 +235,8 @@ int main() {
 
     ComputeShader computeShaderProgram("shaders/compute_shader.glsl");
 
-    GLuint texOutput1 = genTexture(SCR_WIDTH, SCR_HEIGHT);
-    GLuint texOutput2 = genTexture(SCR_WIDTH, SCR_HEIGHT);
+    GLuint texOutput1 = genTexture(textureWidth, textureHeight);
+    GLuint texOutput2 = genTexture(textureWidth, textureHeight);
 
     ObjectManager objManager;
     objManager.loadMeshes();
@@ -232,8 +286,8 @@ int main() {
             computeShaderProgram.set("frameCount", frameCount);
             computeShaderProgram.set("maxBounces", objManager.getMaxBounces());
 
-            computeShaderProgram.set("width", (int)SCR_WIDTH);
-            computeShaderProgram.set("height", (int)SCR_HEIGHT);
+            computeShaderProgram.set("width", (int)textureWidth);
+            computeShaderProgram.set("height", (int)textureHeight);
             computeShaderProgram.set("cameraPosition", camera.getPos());
             computeShaderProgram.set("viewMatrix", camera.getViewMat());
 
@@ -243,6 +297,7 @@ int main() {
                 computeShaderProgram.setArray("spheres", i, "r", objManager.getObject(spheres[i]).getSize()[0]);
                 computeShaderProgram.setArray("spheres", i, "mat.color", objManager.getObject(spheres[i]).getColor());
                 computeShaderProgram.setArray("spheres", i, "mat.emissionColor", objManager.getObject(spheres[i]).getEmiColor());
+                computeShaderProgram.setArray("spheres", i, "mat.emissionStrength", objManager.getObject(spheres[i]).getEmissionStrength());
                 computeShaderProgram.setArray("spheres", i, "mat.smoothness", objManager.getObject(spheres[i]).getSmoothness());
                 computeShaderProgram.setArray("spheres", i, "mat.reflexivity", objManager.getObject(spheres[i]).getReflexivity());
             }
@@ -256,6 +311,7 @@ int main() {
                 computeShaderProgram.setArray("tores", i, "r", 0.1f);
                 computeShaderProgram.setArray("tores", i, "mat.color", objManager.getObject(tores[i]).getColor());
                 computeShaderProgram.setArray("tores", i, "mat.emissionColor", objManager.getObject(tores[i]).getEmiColor());
+                computeShaderProgram.setArray("tores", i, "mat.emissionStrength", objManager.getObject(tores[i]).getEmissionStrength());
                 computeShaderProgram.setArray("tores", i, "mat.smoothness", objManager.getObject(tores[i]).getSmoothness());
                 computeShaderProgram.setArray("tores", i, "mat.reflexivity", objManager.getObject(tores[i]).getReflexivity());
             }
@@ -269,6 +325,7 @@ int main() {
                 computeShaderProgram.setArray("triangleMeshes", i, "endIdx", trianglesInfo[i].endIdx);
                 computeShaderProgram.setArray("triangleMeshes", i, "mat.color", objManager.getObject(trianglesInfo[i].matIdx).getColor());
                 computeShaderProgram.setArray("triangleMeshes", i, "mat.emissionColor", objManager.getObject(trianglesInfo[i].matIdx).getEmiColor());
+                computeShaderProgram.setArray("triangleMeshes", i, "mat.emissionStrength", objManager.getObject(trianglesInfo[i].matIdx).getEmissionStrength());
                 computeShaderProgram.setArray("triangleMeshes", i, "mat.smoothness", objManager.getObject(trianglesInfo[i].matIdx).getSmoothness());
                 computeShaderProgram.setArray("triangleMeshes", i, "mat.reflexivity", objManager.getObject(trianglesInfo[i].matIdx).getReflexivity());
             }
@@ -276,7 +333,7 @@ int main() {
             computeShaderProgram.set("triangleMeshCount", (int)trianglesInfo.size());
 
             // Launch compute shader
-            glDispatchCompute((SCR_WIDTH + 15) / 16, (SCR_HEIGHT + 15) / 16, 1);
+            glDispatchCompute(textureWidth / 16, textureHeight / 16, 1);
 
             // Wait for the compute shader to stop
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
